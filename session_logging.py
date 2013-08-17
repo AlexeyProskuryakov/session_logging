@@ -21,7 +21,7 @@ def format_datetime(string_datetime):
     try:
         offset = int(string_datetime[-5:])
     except:
-        print "Error"
+        return datetime.strptime(string_datetime, date_format)
 
     delta = timedelta(hours=offset / 100)
     time = datetime.strptime(string_datetime[:-6], date_format)
@@ -52,10 +52,10 @@ def add_session_params(params, function=db_client.add_row):
     session_params = validate_session_params(params)
     if session_params:
         try:
-            function(**session_params)
+            result = function(**session_params)
+            return make_response(json.dumps({'success': True, 'detail': str(result)}))
         except Exception as e:
             return make_response(json.dumps({'success': False, 'error': str(e)}))
-        return make_response(json.dumps({'success': True}))
     else:
         return make_response(json.dumps({'success': False, 'error': 'Bad params'}))
 
@@ -70,8 +70,10 @@ def session_process():
 
     if request.method == 'GET':
         sessions = db_client.get_last()
-        session_names =
-        return render_template('last_sessions.html', sessions=sessions)
+        if len(sessions):
+            session_keys = sessions[0].keys()
+            return render_template('last_sessions.html', sessions=sessions, session_keys=session_keys)
+        return make_response(json.dumps({'success': True, 'error': 'no sessions by this dates'}))
 
     return make_response(json.dumps({'success': False, 'error': 'unrecognized method'}))
 
@@ -79,8 +81,8 @@ def session_process():
 @app.route('/sessions/report')
 def sessions_aggregate():
     aggregated = db_client.get_aggregated()
-    return render_template('report.html', **aggregated)
+    return render_template('report.html', reports=aggregated)
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)

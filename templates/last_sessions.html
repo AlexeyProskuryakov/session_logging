@@ -4,21 +4,24 @@
     <title>Last sessions on 30 days</title>
 </head>
 <body>
-<table>
+<table align='center' border="2" bordercolor='black' cellpadding='5' width='100%'>
     <thead>
     {% for name in session_keys %}
         <td>{{ name }}</td>
     {% endfor %}
     </thead>
+    <tbody>
+    {% for session in sessions %}
+        <tr>
+            {% for key, value in session.iteritems() %}
+                <td> {{ value }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
 
+    </tbody>
 </table>
 
-{% for session in sessions %}
-    <ul>
-        {% for key in session.iteritems() %}
-            <li> {{ item }}</li>
-        {% endfor %}
-    </ul>
-{% endfor %}
+
 </body>
 </html>

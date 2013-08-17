@@ -4,19 +4,34 @@
     <title>Report</title>
 </head>
 <body>
-<ul>День</ul>
-<li> {{ day }} </li>
-<ul>Число сессий</ul>
-<li> {{ sessions_count }}</li>
-<ul>Число юников</ul>
-<li> {{ unics_count }} </li>
-<ul>Медиана длины сессии</ul>
-<li> {{ median_length_of_session }}</li>
-<ul>Число статус crash</ul>
-<li> {{ crash_status_count }}</li>
-<ul>Число статус ok</ul>
-<li>{{ ok_status_count }}</li>
-<ul>Число ticket <> null</ul>
-<li> {{ null_ticket_count  }}</li>
+<table align='center' border="2" bordercolor='black' cellpadding='5' width='100%'>
+    <thead>
+    <tr>
+        <td>День</td>
+        <td>Число сессий</td>
+        <td>Число юников</td>
+        <td>Медиана длины сессии</td>
+        <td>Число статус crash</td>
+        <td>Число статус ok</td>
+        <td>Число ticket <> null</td>
+    </tr>
+    </thead>
+    <tbody>
+    {% for report_el in reports %}
+        <tr>
+            <td>{{ report_el.day }}</td>
+            <td>{{ report_el.sessions_count }}</td>
+            <td>{{ report_el.unique_count }}</td>
+            <td>{{ report_el.median_length_of_session }}</td>
+            <td>{{ report_el.crash_status_count }}</td>
+            <td>{{ report_el.ok_status_count }}</td>
+            <td>{{ report_el.not_null_ticket_count }}</td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+</table>
+
+
 </body>
 </html>

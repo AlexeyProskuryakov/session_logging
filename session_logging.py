@@ -1,11 +1,28 @@
 #coding: utf-8
 from datetime import datetime, timedelta
+import logging
+import sys
+import os
 
 from flask import Flask, request, redirect, url_for, render_template, make_response, json
 
 import db_manager
 from properties import *
 
+curr_path = os.path.dirname(__file__)
+log = logging.getLogger(__name__)
+log.setLevel('DEBUG')
+frmtr = logging.Formatter('%(asctime)s|%(process)d|%(levelname)s|: %(message)s')
+try:
+    os.mkdir(os.path.join(curr_path, 'logs'))
+except:
+    pass
+fh = logging.FileHandler(os.path.join(curr_path, 'logs', 'result.log'), mode='w+')
+fh.setFormatter(frmtr)
+sh = logging.StreamHandler(sys.stdout)
+sh.setFormatter(frmtr)
+log.addHandler(fh)
+log.addHandler(sh)
 
 app = Flask(__name__)
 
@@ -14,6 +31,7 @@ db_client = db_manager.DatabaseLogger()
 
 @app.route('/')
 def main():
+    log.info('redirecting to sessions...')
     return redirect(url_for('session_process'))
 
 
@@ -32,17 +50,25 @@ def format_datetime(string_datetime):
 def validate_session_params(params):
     result = {}
     try:
-        result['session_id'] = int(params['session_id'])
-        result['app_name'] = params['app_name']
+        result['session_id'] = params['session_id']
         result['identity'] = params['identity']
+        result['app_name'] = params['app_name']
         result['identity_type'] = params['identity_type']
-        result['status'] = params['status']
-        result['ticket'] = params['ticket'] if params['ticket'] != 'null' else None
-        result['duration'] = int(params['duration'])
         result['leased_at'] = format_datetime(params['leased_at'])
-        result['streaming_started_at'] = format_datetime(params['streaming_started_at'])
-        result['latency'] = int(params['latency'])
-        result['bytes_sent'] = int(params['bytes_sent'])
+
+        result['status'] = params.get('status')
+
+        ticket = params.get('ticket')
+        if ticket and ticket != 'null':
+            result['ticket'] = ticket
+        else:
+            result['ticket'] = None
+
+        result['duration'] = int(params.get('duration') or 0)
+        result['streaming_started_at'] = format_datetime(
+            params.get('streaming_started_at') or datetime.now().strftime(date_format))
+        result['latency'] = int(params.get('latency') or 0)
+        result['bytes_sent'] = int(params.get('bytes_sent') or 0)
         return result
     except Exception as e:
         return None
@@ -62,6 +88,8 @@ def add_session_params(params, function=db_client.add_row):
 
 @app.route('/sessions', methods=['POST', 'GET', 'PUT'])
 def session_process():
+    log.info('input: [%s] with params:\n%s' % (
+        request.method, '\n'.join(['%s\t\t:%s' % (k, v) for k, v in request.form.iteritems()])))
     if request.method == 'POST':
         return add_session_params(request.form, db_client.add_row)
 
@@ -80,9 +108,11 @@ def session_process():
 
 @app.route('/sessions/report')
 def sessions_aggregate():
+    log.info('input %s' % request.url)
     aggregated = db_client.get_aggregated()
     return render_template('report.html', reports=aggregated)
 
 
 if __name__ == '__main__':
+    log.info('starting app')
     app.run(host='0.0.0.0', port=5000)
